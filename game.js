@@ -150,16 +150,16 @@ function cardEl(c, faceUp, opts={}){
     el.insertAdjacentHTML('beforeend','<div class="fb"></div>');
   }else{
     const img = new Image();
-    img.src = cardFileName(c);
-    // A/J/Q/K는 '...2.png' 형식(예: king_of_clubs2.png)도 자동 재시도
+    const base = cardFileName(c);
+    const alt  = base.replace(CARD_CONFIG.ext, '2'+CARD_CONFIG.ext);
+    // J/Q/K는 인물 그림 버전(...2.png)을 우선 사용, 없으면 기본 버전으로
+    const primary = (c.r>=11) ? alt : base;
+    const secondary = (c.r>=11) ? base : alt;
+    img.src = primary;
     let retried = false;
     img.onerror = ()=>{
-      if(!retried && (c.r===1 || c.r>=11)){
-        retried = true;
-        img.src = cardFileName(c).replace(CARD_CONFIG.ext, '2'+CARD_CONFIG.ext);
-      }else{
-        el.classList.add('noimg');
-      }
+      if(!retried){ retried = true; img.src = secondary; }
+      else el.classList.add('noimg');
     };
     el.appendChild(img);
     const red = SUIT_RED[c.s] ? ' red':'';
