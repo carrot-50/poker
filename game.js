@@ -151,7 +151,16 @@ function cardEl(c, faceUp, opts={}){
   }else{
     const img = new Image();
     img.src = cardFileName(c);
-    img.onerror = ()=> el.classList.add('noimg');
+    // A/J/Q/K는 '...2.png' 형식(예: king_of_clubs2.png)도 자동 재시도
+    let retried = false;
+    img.onerror = ()=>{
+      if(!retried && (c.r===1 || c.r>=11)){
+        retried = true;
+        img.src = cardFileName(c).replace(CARD_CONFIG.ext, '2'+CARD_CONFIG.ext);
+      }else{
+        el.classList.add('noimg');
+      }
+    };
     el.appendChild(img);
     const red = SUIT_RED[c.s] ? ' red':'';
     const rk = RANK_KO(rv(c));
@@ -277,10 +286,18 @@ function aiDecide(p, toCall, street){
   const s = aiStrength(p) + (Math.random()*80-40);
   const potOdds = toCall / Math.max(pot,1);
   if(toCall===0){
-    if(s>350 && p.money>PPING && raisesThisStreet<MAX_RAISES && Math.random()<0.6) return 'half';
+    if(s>350 && p.money>PPING && raisesThisStreet<MAX_RAISES){
+      const r = Math.random();
+      if(r<0.35) return 'half';
+      if(r<0.6) return 'quarter';
+    }
+    if(s>280 && raisesThisStreet<MAX_RAISES && Math.random()<0.3) return 'pping';
     return 'check';
   }
-  if(s>420 && raisesThisStreet<MAX_RAISES && p.money>toCall*2 && Math.random()<0.5) return 'half';
+  if(raisesThisStreet<MAX_RAISES && p.money>toCall*2){
+    if(s>420 && Math.random()<0.5) return 'half';
+    if(s>330 && Math.random()<0.4) return 'quarter';
+  }
   if(s>250) return 'call';
   if(s>150 && potOdds<0.35) return 'call';
   if(street<=5 && potOdds<0.2) return 'call';
@@ -331,14 +348,22 @@ async function bettingRound(street){
     setActing(p.id);
     let action;
     if(p.isHuman){
-      const half = Math.min(toCall + Math.ceil((pot+toCall)/2), p.money);
+      const quarter = Math.min(toCall + Math.ceil((pot+toCall)/4), p.money);
+      const half    = Math.min(toCall + Math.ceil((pot+toCall)/2), p.money);
       const list = [];
       if(toCall===0){
         list.push({label:'체크', value:'check'});
-        if(raisesThisStreet<MAX_RAISES) list.push({label:`삥 (${PPING})`, value:'pping', style:'gold', disabled:p.money<PPING});
+        if(raisesThisStreet<MAX_RAISES){
+          list.push({label:`삥 (${PPING})`, value:'pping', style:'gold', disabled:p.money<PPING});
+          list.push({label:`쿼터 (${quarter.toLocaleString()})`, value:'quarter', disabled:p.money<quarter||quarter<=0});
+          list.push({label:`하프 (${half.toLocaleString()})`, value:'half', disabled:p.money<half||half<=0});
+        }
       }else{
         list.push({label:`콜 (${Math.min(toCall,p.money).toLocaleString()})`, value:'call', style:'gold'});
-        if(raisesThisStreet<MAX_RAISES) list.push({label:`하프 (${half.toLocaleString()})`, value:'half', disabled:p.money<=toCall});
+        if(raisesThisStreet<MAX_RAISES){
+          list.push({label:`쿼터 (${quarter.toLocaleString()})`, value:'quarter', disabled:p.money<=toCall});
+          list.push({label:`하프 (${half.toLocaleString()})`, value:'half', disabled:p.money<=toCall});
+        }
       }
       list.push({label:'다이', value:'die', style:'red'});
       msg('당신 차례입니다');
@@ -346,9 +371,8 @@ async function bettingRound(street){
     }else{
       await sleep(700);
       action = aiDecide(p, toCall, street);
-      if(action==='half' && raisesThisStreet>=MAX_RAISES) action = toCall>0?'call':'check';
-      if(action==='pping') action = 'half';
-      if(toCall===0 && action==='half' && p.money<PPING) action='check';
+      if(['half','quarter','pping'].includes(action) && raisesThisStreet>=MAX_RAISES) action = toCall>0?'call':'check';
+      if(action==='pping' && (toCall>0 || p.money<PPING)) action = toCall>0?'call':'check';
     }
 
     if(action==='die'){
@@ -368,12 +392,13 @@ async function bettingRound(street){
       p.money-=amt; p.bet+=amt; pot+=amt; currentBet=p.bet;
       raisesThisStreet++; lastRaiser=p; acted=new Set([p.id]);
       log(`${p.name} <span class="hl">삥 ${amt.toLocaleString()}</span>`);
-    }else if(action==='half'){
-      const raiseTo = toCall + Math.ceil((pot+toCall)/2);
+    }else if(action==='quarter' || action==='half'){
+      const div = action==='quarter' ? 4 : 2;
+      const raiseTo = toCall + Math.ceil((pot+toCall)/div);
       const amt = Math.min(raiseTo, p.money);
       p.money-=amt; p.bet+=amt; pot+=amt; currentBet=Math.max(currentBet,p.bet);
       raisesThisStreet++; lastRaiser=p; acted=new Set([p.id]);
-      log(`${p.name} <span class="hl">하프 ${amt.toLocaleString()}</span>`);
+      log(`${p.name} <span class="hl">${action==='quarter'?'쿼터':'하프'} ${amt.toLocaleString()}</span>`);
     }
     render();
     if(activeBettors().length===1) break;
