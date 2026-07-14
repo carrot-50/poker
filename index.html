@@ -91,7 +91,12 @@ h1{
 .fb.red{color:#c73535}
 .card.back{background:repeating-linear-gradient(45deg,#7d1f24 0 6px,#5e1418 6px 12px)}
 .card.back .fb{display:flex;background:transparent;align-items:center;justify-content:center}
-.card.back .fb::after{content:"◆";color:var(--gold);font-size:22px;opacity:.85;margin:auto}
+.card.back .fb::after{
+  content:"7P";margin:auto;
+  font-family:'Do Hyeon';font-size:15px;letter-spacing:.05em;color:var(--gold);
+  width:34px;height:34px;line-height:32px;text-align:center;
+  border:2px solid var(--gold);border-radius:50%;opacity:.9;
+}
 .card.hiddenmine{outline:2px dashed rgba(230,196,106,.55);outline-offset:-4px}
 .card.selectable{cursor:pointer}
 .card.selectable:hover{transform:translateY(-8px);box-shadow:0 8px 14px rgba(0,0,0,.6),0 0 0 2px var(--gold)}
@@ -109,7 +114,7 @@ h1{
 
 /* ===== 내 좌석 ===== */
 .seat-me{align-items:center}
-.seat-me .hand{--card-w:72px;--card-h:104px}
+.seat-me .hand{--card-w:72px;--card-h:104px;margin-top:10px;margin-bottom:6px}
 
 /* ===== 액션 바 ===== */
 .actions{
@@ -185,9 +190,9 @@ h1{
     </div>
 
     <div class="seat seat-me" id="seat-0">
+      <div class="nameplate"><span class="boss-badge">BOSS</span><span>나</span><span class="money" id="money-0"></span></div>
       <div class="rank-label" id="rank-0"></div>
       <div class="hand" id="hand-0"></div>
-      <div class="nameplate"><span class="boss-badge">BOSS</span><span>나</span><span class="money" id="money-0"></span></div>
     </div>
 
     <div class="banner" id="banner"><h2 id="banner-title"></h2><p id="banner-sub"></p></div>
@@ -200,6 +205,6 @@ h1{
 
 <div class="log" id="log"></div>
 
-<script src="game.js"></script>
+<script src="game.js?v=3"></script>
 </body>
 </html>
