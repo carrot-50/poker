@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>세븐포커</title>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --felt-1:#1c5c3a; --felt-2:#0c3320;
+  --wood-1:#6b4226; --wood-2:#3f2714;
+  --gold:#e6c46a; --gold-deep:#b8933f;
+  --cream:#f4ecd9; --ink:#17120b;
+  --red:#d94f4f; --blue:#4a7dbd;
+  --card-w:64px; --card-h:92px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Noto Sans KR',sans-serif;
+  background:radial-gradient(ellipse at 50% 30%, #22301f 0%, #10160e 70%, #090c08 100%);
+  color:var(--cream); min-height:100vh;
+  display:flex; flex-direction:column; align-items:center;
+  padding:14px 10px 30px; user-select:none;
+}
+h1{
+  font-family:'Do Hyeon',sans-serif; font-size:clamp(26px,4vw,40px);
+  letter-spacing:.35em; text-indent:.35em; color:var(--gold);
+  text-shadow:0 0 18px rgba(230,196,106,.35), 0 2px 0 #6b4b12;
+  margin-bottom:4px;
+}
+.subtitle{font-size:12px;color:#9db08f;letter-spacing:.2em;margin-bottom:14px}
+
+/* ===== 테이블 ===== */
+.table-wrap{width:100%;max-width:920px}
+.table{
+  position:relative; width:100%; min-height:540px;
+  border-radius:260px/180px;
+  background:radial-gradient(ellipse at 50% 42%, var(--felt-1), var(--felt-2) 78%);
+  border:14px solid var(--wood-1);
+  box-shadow:
+    inset 0 0 60px rgba(0,0,0,.55),
+    0 0 0 3px var(--wood-2),
+    0 18px 40px rgba(0,0,0,.6);
+  display:flex; flex-direction:column; justify-content:space-between;
+  padding:18px 26px 20px; gap:8px;
+}
+.table::before{
+  content:""; position:absolute; inset:16px;
+  border-radius:240px/160px;
+  border:2px solid rgba(230,196,106,.22); pointer-events:none;
+}
+
+/* ===== 좌석 ===== */
+.seats-top{display:flex;justify-content:space-around;gap:10px}
+.seat{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:200px}
+.seat.folded{opacity:.38;filter:grayscale(.7)}
+.nameplate{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(0,0,0,.45);border:1px solid rgba(230,196,106,.35);
+  border-radius:20px;padding:4px 14px;font-size:13px;
+}
+.nameplate .money{color:var(--gold);font-weight:700;font-variant-numeric:tabular-nums}
+.boss-badge{
+  display:none;font-family:'Do Hyeon';font-size:11px;letter-spacing:.1em;
+  background:linear-gradient(180deg,var(--gold),var(--gold-deep));
+  color:var(--ink);border-radius:10px;padding:2px 8px;
+}
+.seat.boss .boss-badge{display:inline-block}
+.seat.acting .nameplate{box-shadow:0 0 0 2px var(--gold),0 0 16px rgba(230,196,106,.5)}
+.hand{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;min-height:var(--card-h)}
+.rank-label{font-size:11px;color:#c9d8bd;min-height:15px}
+
+/* ===== 카드 ===== */
+.card{
+  position:relative;width:var(--card-w);height:var(--card-h);
+  border-radius:7px;background:#fdfaf2;
+  box-shadow:0 2px 6px rgba(0,0,0,.5);
+  overflow:hidden;flex:none;
+  transition:transform .18s;
+}
+.card img{width:100%;height:100%;object-fit:cover;display:block}
+.card .fb{
+  position:absolute;inset:0;display:none;flex-direction:column;
+  justify-content:space-between;padding:5px 6px;background:#fdfaf2;color:#222;
+}
+.card.noimg .fb{display:flex}
+.card.noimg img{display:none}
+.fb .corner{font-size:15px;font-weight:700;line-height:1.05}
+.fb .corner.bottom{align-self:flex-end;transform:rotate(180deg)}
+.fb .pip{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:26px}
+.fb.red{color:#c73535}
+.card.back{background:repeating-linear-gradient(45deg,#7d1f24 0 6px,#5e1418 6px 12px)}
+.card.back .fb{display:flex;background:transparent;align-items:center;justify-content:center}
+.card.back .fb::after{content:"◆";color:var(--gold);font-size:22px;opacity:.85;margin:auto}
+.card.hiddenmine{outline:2px dashed rgba(230,196,106,.55);outline-offset:-4px}
+.card.selectable{cursor:pointer}
+.card.selectable:hover{transform:translateY(-8px);box-shadow:0 8px 14px rgba(0,0,0,.6),0 0 0 2px var(--gold)}
+.card.dealt{animation:deal .3s ease-out}
+@keyframes deal{from{transform:translateY(-24px) scale(.85);opacity:0}to{transform:none;opacity:1}}
+
+/* ===== 팟 ===== */
+.pot-area{display:flex;flex-direction:column;align-items:center;gap:4px;margin:2px 0}
+.pot{
+  font-family:'Do Hyeon';font-size:22px;color:var(--gold);
+  background:rgba(0,0,0,.4);border:1px solid rgba(230,196,106,.4);
+  border-radius:24px;padding:4px 22px;letter-spacing:.05em;
+}
+.msg{font-size:14px;color:#e8f0dc;min-height:20px;text-align:center;text-shadow:0 1px 2px #000}
+
+/* ===== 내 좌석 ===== */
+.seat-me{align-items:center}
+.seat-me .hand{--card-w:72px;--card-h:104px}
+
+/* ===== 액션 바 ===== */
+.actions{
+  display:flex;gap:10px;justify-content:center;flex-wrap:wrap;
+  margin-top:16px;min-height:48px;width:100%;max-width:920px;
+}
+.btn{
+  font-family:'Do Hyeon',sans-serif;font-size:17px;letter-spacing:.08em;
+  padding:10px 26px;border-radius:10px;border:none;cursor:pointer;
+  background:linear-gradient(180deg,#3a5a43,#243c2c);color:var(--cream);
+  border:1px solid rgba(230,196,106,.35);
+  box-shadow:0 3px 0 #142218, 0 5px 10px rgba(0,0,0,.4);
+  transition:transform .1s, filter .1s;
+}
+.btn:hover{filter:brightness(1.2)}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #142218}
+.btn.gold{background:linear-gradient(180deg,var(--gold),var(--gold-deep));color:var(--ink);box-shadow:0 3px 0 #7a5f22,0 5px 10px rgba(0,0,0,.4)}
+.btn.red{background:linear-gradient(180deg,#a83a3a,#742323);box-shadow:0 3px 0 #4a1414,0 5px 10px rgba(0,0,0,.4)}
+.btn:disabled{opacity:.4;cursor:default;filter:none;transform:none}
+
+/* ===== 로그 ===== */
+.log{
+  width:100%;max-width:920px;margin-top:12px;height:110px;overflow-y:auto;
+  background:rgba(0,0,0,.35);border:1px solid #2c3a28;border-radius:10px;
+  padding:8px 12px;font-size:12.5px;line-height:1.65;color:#b9c6ac;
+}
+.log .hl{color:var(--gold)}
+.log .lose{color:var(--red)}
+
+/* ===== 결과 배너 ===== */
+.banner{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.9);
+  background:linear-gradient(180deg,rgba(20,16,8,.95),rgba(10,8,4,.95));
+  border:2px solid var(--gold);border-radius:16px;padding:22px 44px;
+  text-align:center;z-index:20;opacity:0;pointer-events:none;
+  transition:opacity .3s, transform .3s;
+}
+.banner.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.banner h2{font-family:'Do Hyeon';font-size:30px;color:var(--gold);letter-spacing:.15em;margin-bottom:6px}
+.banner p{font-size:15px;color:var(--cream)}
+
+@media (max-width:640px){
+  :root{--card-w:44px;--card-h:64px}
+  .seat-me .hand{--card-w:52px;--card-h:75px}
+  .table{min-height:460px;padding:14px 10px 16px;border-width:10px}
+  .seat{min-width:0}
+  .fb .corner{font-size:11px}.fb .pip{font-size:18px}
+}
+</style>
+</head>
+<body>
+<h1>세븐포커</h1>
+<div class="subtitle">SEVEN CARD POKER · ♠ &gt; ◆ &gt; ♥ &gt; ♣</div>
+
+<div class="table-wrap">
+  <div class="table">
+    <div class="seats-top">
+      <div class="seat" id="seat-1">
+        <div class="nameplate"><span class="boss-badge">BOSS</span><span>김포커</span><span class="money" id="money-1"></span></div>
+        <div class="hand" id="hand-1"></div>
+        <div class="rank-label" id="rank-1"></div>
+      </div>
+      <div class="seat" id="seat-2">
+        <div class="nameplate"><span class="boss-badge">BOSS</span><span>이올인</span><span class="money" id="money-2"></span></div>
+        <div class="hand" id="hand-2"></div>
+        <div class="rank-label" id="rank-2"></div>
+      </div>
+    </div>
+
+    <div class="pot-area">
+      <div class="pot">POT <span id="pot">0</span></div>
+      <div class="msg" id="msg">게임 시작 버튼을 누르세요</div>
+    </div>
+
+    <div class="seat seat-me" id="seat-0">
+      <div class="rank-label" id="rank-0"></div>
+      <div class="hand" id="hand-0"></div>
+      <div class="nameplate"><span class="boss-badge">BOSS</span><span>나</span><span class="money" id="money-0"></span></div>
+    </div>
+
+    <div class="banner" id="banner"><h2 id="banner-title"></h2><p id="banner-sub"></p></div>
+  </div>
+</div>
+
+<div class="actions" id="actions">
+  <button class="btn gold" id="btn-start">게임 시작</button>
+</div>
+
+<div class="log" id="log"></div>
+
+<script src="game.js"></script>
+</body>
+</html>
